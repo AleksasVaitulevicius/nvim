@@ -1,4 +1,14 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not vim.loop.fs_stat(lazypath) then
+	vim.fn.system({
+		"git",
+		"clone",
+		"--filter=blob:none",
+		"https://github.com/folke/lazy.nvim.git",
+		"--branch=stable", -- latest stable release
+		lazypath,
+	})
+end
 vim.opt.rtp:prepend(lazypath)
 vim.opt.number = true
 vim.opt.mouse = ""
@@ -17,6 +27,13 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	group = vim.api.nvim_create_augroup("kickstart-highlight-yank", { clear = true }),
 	callback = function()
 		vim.hl.on_yank()
+	end,
+})
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	pattern = "**/*.tex",
+	callback = function()
+		vim.opt_local.spell = true
+		vim.opt_local.spelllang = "en_gb"
 	end,
 })
 
@@ -336,7 +353,14 @@ require("lazy").setup({
 			local servers = {
 				basedpyright = {},
 				-- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-
+				texlab = {
+					settings = {
+						chktex = {
+							onEdit = true,
+							onOpenAndSave = true,
+						},
+					},
+				},
 				lua_ls = {
 					settings = {
 						Lua = {
@@ -358,7 +382,7 @@ require("lazy").setup({
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
-				ensure_installed = {},
+				ensure_installed = { "texlab" },
 				automatic_installation = false,
 				handlers = {
 					function(server_name)
@@ -429,26 +453,34 @@ require("lazy").setup({
 			keymap = {
 				preset = "default",
 			},
-
 			appearance = {
 				nerd_font_variant = "mono",
 			},
-
 			completion = {
 				documentation = { auto_show = false, auto_show_delay_ms = 500 },
 			},
-
 			sources = {
 				default = { "lsp", "path", "snippets", "lazydev" },
 				providers = {
 					lazydev = { module = "lazydev.integrations.blink", score_offset = 100 },
 				},
 			},
-
 			snippets = { preset = "luasnip" },
 			fuzzy = { implementation = "lua" },
 			signature = { enabled = true },
 		},
+	},
+	{
+		"lervag/vimtex",
+		ft = "tex",
+		config = function()
+			vim.g.vimtex_compiler_method = "latexmk"
+			vim.g.vimtex_view_method = "zathura"
+			vim.g.vimtex_compiler_latexmk = {
+				build_dir = "",
+				options = { "-pdf", "-interaction=nonstopmode", "-synctex=1", "-pvc" }, -- -pvc = auto compile
+			}
+		end,
 	},
 	{
 		"mrcjkb/rustaceanvim",
@@ -489,6 +521,7 @@ require("lazy").setup({
 				"query",
 				"vim",
 				"vimdoc",
+				"latex",
 			},
 			auto_install = true,
 			highlight = {
@@ -519,3 +552,9 @@ vim.g.rustaceanvim = function()
 		},
 	}
 end
+
+require("luasnip").config.set_config({
+	enable_autosnippets = true,
+	store_selection_keys = "<Tab>",
+})
+require("luasnip.loaders.from_lua").load({ paths = "~/.config/nvim/LuaSnip/" })
