@@ -5,7 +5,7 @@ if not vim.loop.fs_stat(lazypath) then
 		"clone",
 		"--filter=blob:none",
 		"https://github.com/folke/lazy.nvim.git",
-		"--branch=stable", -- latest stable release
+		"--branch=stable",
 		lazypath,
 	})
 end
@@ -72,6 +72,7 @@ require("lazy").setup({
 		"mfussenegger/nvim-dap",
 		dependencies = {
 			"rcarriga/nvim-dap-ui",
+			"mfussenegger/nvim-dap-python",
 			"theHamsta/nvim-dap-virtual-text",
 			"nvim-neotest/nvim-nio",
 		},
@@ -79,6 +80,23 @@ require("lazy").setup({
 			local dap = require("dap")
 			local ui = require("dapui")
 			require("dapui").setup()
+
+			dap.adapters.python = {
+				type = "executable",
+				command = "python3",
+				args = { "-m", "debugpy.adapter" },
+			}
+			dap.configurations.python = {
+				{
+					type = "python",
+					request = "launch",
+					name = "Launch file",
+					program = "${file}",
+					pythonPath = function()
+						return "python3"
+					end,
+				},
+			}
 
 			vim.api.nvim_set_hl(0, "DapBreakpoint", { ctermbg = 0, fg = "#993939", bg = "#31353f" })
 			vim.api.nvim_set_hl(0, "DapLogPoint", { ctermbg = 0, fg = "#61afef", bg = "#31353f" })
@@ -178,6 +196,7 @@ require("lazy").setup({
 						"%.png",
 						"%.drawio",
 						"%.zip",
+						".venv",
 						"__pycache__/",
 						"%.pkl",
 						"target",
@@ -212,6 +231,7 @@ require("lazy").setup({
 				{ silent = true, desc = "[S]earch by [G]rep with [H]idden files" }
 			)
 			vim.keymap.set("n", "<leader>sd", builtin.diagnostics, { desc = "[S]earch [D]iagnostics" })
+			vim.keymap.set("n", "<leader>dd", vim.diagnostic.open_float, { desc = "Open [D]iagnostics" })
 			vim.keymap.set("n", "<leader>sr", builtin.resume, { desc = "[S]earch [R]esume" })
 			vim.keymap.set("n", "<leader>s.", builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
 			vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
@@ -351,7 +371,18 @@ require("lazy").setup({
 			local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 			local servers = {
-				basedpyright = {},
+				basedpyright = {
+					exclude = { "**/__pycache__" },
+					disableOrganizeImports = false,
+					reportMissingTypeStubs = "ignore",
+					reportUnknownLambdaType = "ignore",
+					reportExplicitAny = "ignore",
+					analysis = {
+						generateWithTypeAnnotation = false,
+						typeCheckingMode = "off",
+						diagnosticMode = "openFilesOnly",
+					},
+				},
 				-- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
 				texlab = {
 					settings = {
@@ -367,7 +398,10 @@ require("lazy").setup({
 							completion = {
 								callSnippet = "Replace",
 							},
-							diagnostics = { disable = { "missing-fields" } },
+							diagnostics = {
+								globals = { "vim" },
+								disable = { "missing-fields" },
+							},
 						},
 					},
 				},
@@ -491,7 +525,6 @@ require("lazy").setup({
 		"folke/tokyonight.nvim",
 		priority = 1000,
 		config = function()
-			---@diagnostic disable-next-line: missing-fields
 			require("tokyonight").setup({
 				transparent = true,
 				on_highlights = function(hl, c)
