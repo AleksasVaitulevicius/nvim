@@ -30,10 +30,11 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-	pattern = "**/*.tex",
+	pattern = { "**/*.tex", "**/*.md", "**/*.html" },
 	callback = function()
 		vim.opt_local.spell = true
 		vim.opt_local.spelllang = "en_gb"
+		-- vim.opt_local.spelllang = "lt"
 	end,
 })
 
@@ -52,6 +53,8 @@ vim.keymap.set("n", "<leader>r", function()
 		cmd = "g++ " .. filename .. " -o /tmp/a.out && /tmp/a.out"
 	elseif filetype == "c" then
 		cmd = "gcc " .. filename .. " -o /tmp/a.out && /tmp/a.out"
+	elseif filetype == "lua" then
+		cmd = "lua " .. filename
 	elseif filetype == "sh" then
 		cmd = "bash " .. filename
 	else
