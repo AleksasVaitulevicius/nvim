@@ -541,8 +541,9 @@ require("lazy").setup({
 	},
 	{
 		"nvim-treesitter/nvim-treesitter",
+		branch = "main",
+		lazy = false,
 		build = ":TSUpdate",
-		main = "nvim-treesitter.configs",
 		-- [[ Configure Treesitter ]] See `:help nvim-treesitter`
 		opts = {
 			ensure_installed = {
